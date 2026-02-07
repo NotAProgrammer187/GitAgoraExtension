@@ -9,7 +9,7 @@ export interface GitAgoraConfig {
 export function getConfig(): GitAgoraConfig {
   const cfg = vscode.workspace.getConfiguration('gitagora');
   return {
-    apiUrl: cfg.get<string>('apiUrl', 'http://localhost:3000').replace(/\/+$/, ''),
+    apiUrl: cfg.get<string>('apiUrl', 'http://localhost:3000').replace(/\/+$/, ''), //using localhost first (development) will branch to our production url later :))
     idleTimeout: cfg.get<number>('idleTimeout', 300),
     trackProjectNames: cfg.get<boolean>('trackProjectNames', true),
   };
