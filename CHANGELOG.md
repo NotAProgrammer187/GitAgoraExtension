@@ -2,6 +2,15 @@
 
 All notable changes to the GitAgora extension will be documented in this file.
 
+## [0.2.4] - 2026-02-08
+
+### Fixed
+
+- "Today" stats now use the user's local timezone instead of UTC — previously showed yesterday's sessions after midnight for users west of UTC
+- Extension sends `tz_offset` parameter so the server computes the correct day boundaries per-user
+
+---
+
 ## [0.2.3] - 2026-02-07
 
 ### Fixed

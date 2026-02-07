@@ -91,7 +91,8 @@ export class ApiClient {
     }
 
     try {
-      const response = await fetch(`${this.apiUrl}/api/heartbeat?today=true`, {
+      const tzOffset = new Date().getTimezoneOffset()
+      const response = await fetch(`${this.apiUrl}/api/heartbeat?today=true&tz_offset=${tzOffset}`, {
         headers: {
           'Authorization': `Bearer ${this.token}`,
         },
