@@ -2,7 +2,7 @@
 
 All notable changes to the GitAgora extension will be documented in this file.
 
-## [0.2.1] - 2026-02-07
+## [0.2.2] - 2026-02-07
 
 ### Improved
 
@@ -12,6 +12,13 @@ All notable changes to the GitAgora extension will be documented in this file.
 - Added neon green divider between header and content
 - Added "gitagora.xyz" footer to both signed-in and signed-out views
 - Stats are cached locally so the panel doesn't flash empty on refresh
+
+### Fixed
+
+- Sidebar now renders correctly when not signed in (shows "Sign in with GitHub" button)
+- Added `onView` activation event so sidebar loads even if opened before extension starts
+- Panel re-renders when switching back to the GitAgora tab
+- Logo.png icon added to sidebar panel header
 
 ---
 

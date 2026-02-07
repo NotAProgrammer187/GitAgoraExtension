@@ -45,6 +45,13 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       }
     });
 
+    // Re-render when the panel becomes visible again
+    webviewView.onDidChangeVisibility(() => {
+      if (webviewView.visible) {
+        this.render(this.lastStats);
+      }
+    });
+
     this.render();
   }
 
