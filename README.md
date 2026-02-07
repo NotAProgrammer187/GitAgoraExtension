@@ -14,7 +14,7 @@
 
 <p align="center">
   A lightweight VS Code extension that tracks how long you code — broken down by language and session.<br/>
-  Syncs with <a href="https://gitagora.com">GitAgora</a> so you can see your stats on a dashboard and compete with other developers.
+  Syncs with <a href="https://www.gitagora.xyz">GitAgora</a> so you can see your stats on a dashboard and compete with other developers.
 </p>
 
 ---
@@ -102,7 +102,7 @@ Open VS Code settings (`Ctrl+,`) and search for `gitagora`:
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `gitagora.apiUrl` | `http://localhost:3000` | The GitAgora API URL |
+| `gitagora.apiUrl` | `https://www.gitagora.xyz/` | The GitAgora API URL |
 | `gitagora.idleTimeout` | `300` (5 min) | Seconds of inactivity before a session ends |
 | `gitagora.trackProjectNames` | `true` | Send workspace folder names to GitAgora |
 
