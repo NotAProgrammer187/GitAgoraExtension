@@ -1,0 +1,70 @@
+{
+  "name": "gitagora",
+  "displayName": "GitAgora",
+  "description": "Track your coding hours and compete on the leaderboard",
+  "version": "0.1.0",
+  "publisher": "gitagora",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "gitagora.signIn",
+        "title": "GitAgora: Sign In with GitHub"
+      },
+      {
+        "command": "gitagora.signOut",
+        "title": "GitAgora: Sign Out"
+      },
+      {
+        "command": "gitagora.showTodayStats",
+        "title": "GitAgora: Show Today's Stats"
+      },
+      {
+        "command": "gitagora.openDashboard",
+        "title": "GitAgora: Open Dashboard"
+      }
+    ],
+    "configuration": {
+      "title": "GitAgora",
+      "properties": {
+        "gitagora.apiUrl": {
+          "type": "string",
+          "default": "http://localhost:3000",
+          "description": "Base URL for the GitAgora API"
+        },
+        "gitagora.idleTimeout": {
+          "type": "number",
+          "default": 300,
+          "minimum": 60,
+          "description": "Seconds of inactivity before considered idle"
+        },
+        "gitagora.trackProjectNames": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to send project/workspace names to GitAgora"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "package": "npx @vscode/vsce package"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.20.0",
+    "typescript": "^5.3.0"
+  }
+}
