@@ -21,42 +21,38 @@
 
 ## Features
 
-| | Feature | Description |
-|---|---------|-------------|
-| :stopwatch: | **Auto Time Tracking** | Starts when you type, ends when you're idle. Zero effort. |
-| :bar_chart: | **Per-Language Stats** | TypeScript, Python, Rust — every language tracked separately. |
-| :desktop_computer: | **Status Bar** | See today's total coding time right in VS Code. |
-| :trophy: | **Leaderboard** | Compete with friends. Climb the ranks. |
-| :green_circle: | **Live Presence** | Green dot on the leaderboard when you're actively coding. |
-| :signal_strength: | **Offline Support** | Sessions saved locally and synced when you're back online. |
+- **Auto Time Tracking** — Starts when you type, ends when you're idle. Zero effort.
+- **Per-Language Stats** — TypeScript, Python, Rust — every language tracked separately.
+- **Status Bar** — See today's total coding time right in VS Code.
+- **Leaderboard** — Compete with friends. Climb the ranks.
+- **Live Presence** — Shows who's actively coding on the leaderboard in real time.
+- **Offline Support** — Sessions saved locally and synced when you're back online.
 
 ---
 
-## :lock: Privacy & Security
+## Privacy & Security
 
-> **TL;DR — We don't read your code. We don't touch your files. We don't track what you type.**
+> **We don't read your code. We don't touch your files. We don't track what you type.**
 
-### :white_check_mark: What We DO
+### What We Collect
 
 | Data | Description | Opt-out? |
 |------|-------------|----------|
 | Language | The VS Code language ID (e.g. `typescript`, `python`) | No (core feature) |
 | Duration | How long the session lasted | No (core feature) |
 | Timestamps | When the session started and ended | No (core feature) |
-| Project name | Your workspace folder name | :white_check_mark: Yes — set `gitagora.trackProjectNames` to `false` |
+| Project name | Your workspace folder name | Yes — set `gitagora.trackProjectNames` to `false` |
 
-### :no_entry_sign: What We DON'T
+### What We Don't
 
-| | We never... |
-|---|-------------|
-| :x: | Read your source code — not a single line, not a single character |
-| :x: | Access your file contents or file names |
-| :x: | Log keystrokes or clipboard data |
-| :x: | Access your GitHub repos, issues, or private data |
-| :x: | Send git diffs, repo URLs, or browsing history |
-| :x: | Run in the background after VS Code is closed |
+- We **never** read your source code — not a single line, not a single character
+- We **never** access your file contents or file names
+- We **never** log keystrokes or clipboard data
+- We **never** access your GitHub repos, issues, or private data
+- We **never** send git diffs, repo URLs, or browsing history
+- We **never** run in the background after VS Code is closed
 
-### :page_facing_up: The Actual Payload
+### The Actual Payload
 
 Every 2 minutes, this is **exactly** what gets sent — nothing more, nothing less:
 
@@ -70,18 +66,18 @@ Every 2 minutes, this is **exactly** what gets sent — nothing more, nothing le
 }
 ```
 
-### :key: Authentication
+### Authentication
 
-We use **VS Code's built-in GitHub OAuth**. The token is scoped to read your **public profile only** (username + avatar). We never see your GitHub password and cannot access your repositories.
+We use **VS Code's built-in GitHub OAuth**. The token is scoped to read your **public profile only** (username and avatar). We never see your GitHub password and cannot access your repositories.
 
 ---
 
-## :rocket: Quick Start
+## Quick Start
 
 ### Install from VSIX
 
 ```bash
-git clone https://github.com/yourusername/GitAgoraExtension.git
+git clone https://github.com/NotAProgrammer187/GitAgoraExtension.git
 cd GitAgoraExtension
 npm install && npm run build && npm run package
 code --install-extension gitagora-0.1.0.vsix
@@ -90,7 +86,7 @@ code --install-extension gitagora-0.1.0.vsix
 ### Run from Source
 
 ```bash
-git clone https://github.com/yourusername/GitAgoraExtension.git
+git clone https://github.com/NotAProgrammer187/GitAgoraExtension.git
 cd GitAgoraExtension
 npm install
 npm run watch
@@ -100,7 +96,7 @@ Press **F5** in VS Code to launch the Extension Development Host.
 
 ---
 
-## :gear: Configuration
+## Configuration
 
 Open VS Code settings (`Ctrl+,`) and search for `gitagora`:
 
@@ -112,72 +108,52 @@ Open VS Code settings (`Ctrl+,`) and search for `gitagora`:
 
 ---
 
-## :keyboard: Commands
+## Commands
 
 Open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`):
 
 | Command | Description |
 |---------|-------------|
-| `GitAgora: Sign In with GitHub` | :key: Authenticate with your GitHub account |
-| `GitAgora: Sign Out` | :door: Remove your authentication |
-| `GitAgora: Show Today's Stats` | :bar_chart: See a summary of today's coding time |
-| `GitAgora: Open Dashboard` | :globe_with_meridians: Open your dashboard in the browser |
+| `GitAgora: Sign In with GitHub` | Authenticate with your GitHub account |
+| `GitAgora: Sign Out` | Remove your authentication |
+| `GitAgora: Show Today's Stats` | See a summary of today's coding time |
+| `GitAgora: Open Dashboard` | Open your dashboard in the browser |
 
 ---
 
-## :building_construction: How It Works
+## How It Works
 
 ```
-  +-------------------+
-  |  You write code   |
-  +--------+----------+
-           |
-           v
-  +-------------------+
-  |  Tracker detects   |  Text changes, tab switches,
-  |  activity          |  scrolling, focus changes
-  +--------+----------+
-           |
-           v
-  +-------------------+
-  |  SessionManager    |  Tracks language + duration
-  |  manages session   |  Ends on idle (5 min default)
-  +--------+----------+
-           |
-           v
-  +-------------------+
-  |  HeartbeatSender   |  Batches sessions every 2 min
-  |  sends to API      |  Retries on failure
-  +--------+----------+
-           |
-           v
-  +-------------------+
-  |  GitAgora API      |  Stores: language, duration,
-  |  receives data     |  timestamps. That's all.
-  +--------+----------+
-           |
-           v
-  +-------------------+
-  |  Dashboard &       |
-  |  Leaderboard       |
-  +-------------------+
+  You write code
+       │
+       ▼
+  Tracker detects activity (text changes, tab switches, scrolling)
+       │
+       ▼
+  SessionManager tracks the session (language + duration)
+       │
+       ▼
+  After 5 min idle, the session ends at your last activity timestamp
+       │
+       ▼
+  HeartbeatSender batches sessions and sends every 2 minutes
+       │
+       ▼
+  GitAgora API stores: language, duration, timestamps — that's all
+       │
+       ▼
+  Your stats appear on the dashboard and leaderboard
 ```
 
-### :zzz: Idle Detection
+**Idle Detection** — Checks for activity every 30 seconds. After 5 minutes of no input, the session ends at your last activity timestamp. Idle time is never counted.
 
-Checks for activity every 30 seconds. After 5 minutes of no input, the session ends at your **last activity timestamp** — idle time is never counted.
+**Offline Mode** — If the API is unreachable, sessions are persisted in VS Code's local storage and automatically synced when the connection is restored.
 
-### :satellite: Offline Mode
-
-If the API is unreachable, sessions are persisted in VS Code's local storage and automatically synced when the connection is restored. No data is ever lost.
-
-### :green_circle: Live Presence
-
-A lightweight 30-second pulse shows who's actively coding on the leaderboard. Sends minimal data (language + current duration). Fire-and-forget — failures are silently ignored.
+**Live Presence** — A lightweight 30-second pulse shows who's actively coding on the leaderboard. Failures are silently ignored.
 
 ---
 
-## :file_folder: Architecture
+## Architecture
 
 ```
 src/
@@ -187,22 +163,24 @@ src/
 ├── heartbeat.ts .......... Batches and sends completed sessions
 ├── pulse.ts .............. 30-second live presence pings
 ├── api-client.ts ......... HTTP client for the GitAgora API
-├── status-bar.ts ......... "Xh Ym" display in the status bar
+├── status-bar.ts ......... Status bar display
 ├── config.ts ............. Reads VS Code settings
 ├── storage.ts ............ Persists unsent sessions for offline support
 └── utils.ts .............. Language normalization, time formatting
 ```
 
+Zero runtime dependencies. The extension uses only Node.js built-in `fetch` and the VS Code API. The entire bundle is a single `dist/extension.js` file.
+
 ---
 
-## :handshake: Contributing
+## Contributing
 
-Contributions are welcome! Here's how to get started:
+Contributions are welcome. Here's how to get started:
 
 ### Setup
 
 ```bash
-git clone https://github.com/yourusername/GitAgoraExtension.git
+git clone https://github.com/NotAProgrammer187/GitAgoraExtension.git
 cd GitAgoraExtension
 npm install
 npm run watch
@@ -219,17 +197,15 @@ npm run package        # Create .vsix file
 
 ### Guidelines
 
-| | Rule |
-|---|------|
-| :feather: | **Keep it lightweight.** This runs in the background — minimal CPU and memory. |
-| :no_entry: | **Never access file contents.** The extension intentionally ignores source code. Don't change this. |
-| :package: | **Zero runtime deps.** Use Node.js built-ins and the VS Code API only. |
-| :shield: | **Privacy first.** New data collection must be opt-in and documented. |
-| :test_tube: | **Test with F5.** Always test in the Extension Development Host before submitting. |
+- **Keep it lightweight.** This runs in the background — minimal CPU and memory.
+- **Never access file contents.** The extension intentionally ignores source code. Don't change this.
+- **Zero runtime deps.** Use Node.js built-ins and the VS Code API only.
+- **Privacy first.** New data collection must be opt-in and documented.
+- **Test with F5.** Always test in the Extension Development Host before submitting.
 
 ---
 
-## :hammer_and_wrench: Tech Stack
+## Tech Stack
 
 <p>
   <img src="https://img.shields.io/badge/TypeScript-Strict_Mode-3178C6?style=flat-square&logo=typescript&logoColor=white" />
@@ -241,12 +217,6 @@ npm run package        # Create .vsix file
 
 ---
 
-## :page_facing_up: License
+## License
 
-MIT — do whatever you want with it.
-
----
-
-<p align="center">
-  <sub>Built with :green_heart: by the GitAgora community</sub>
-</p>
+This project is licensed under the [MIT License](LICENSE).

@@ -5,6 +5,10 @@
   "version": "0.1.0",
   "publisher": "gitagora",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NotAProgrammer187/GitAgoraExtension"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
