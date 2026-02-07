@@ -2,6 +2,9 @@ const languageMap: Record<string, string> = {
   typescriptreact: 'tsx',
   javascriptreact: 'jsx',
   plaintext: 'text',
+  jsonc: 'json',
+  shellscript: 'bash',
+  dockercompose: 'yaml',
 };
 
 export function normalizeLanguage(languageId: string): string {

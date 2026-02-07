@@ -9,6 +9,7 @@ export interface PulseData {
   project_name: string | null;
   current_seconds: number;
   started_at: string;
+  window_id: string;
 }
 
 export interface TodayStats {
@@ -62,7 +63,7 @@ export class ApiClient {
     }
   }
 
-  async sendPulse(data: PulseData | null): Promise<void> {
+  async sendPulse(data: PulseData | { status: 'stopped'; window_id: string } | null): Promise<void> {
     if (!this.token) {
       return;
     }
