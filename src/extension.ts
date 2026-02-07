@@ -7,6 +7,7 @@ import { ApiClient } from './api-client';
 import { HeartbeatSender } from './heartbeat';
 import { PulseSender } from './pulse';
 import { StatusBar } from './status-bar';
+import { SidebarProvider } from './sidebar-provider';
 import { formatTime } from './utils';
 
 const GITHUB_AUTH_SCOPES = ['user:email'];
@@ -15,6 +16,7 @@ let tracker: Tracker | undefined;
 let heartbeatSender: HeartbeatSender | undefined;
 let pulseSender: PulseSender | undefined;
 let statusBar: StatusBar | undefined;
+let sidebarProvider: SidebarProvider | undefined;
 
 async function signIn(apiClient: ApiClient, statusBar: StatusBar): Promise<boolean> {
   try {
@@ -27,6 +29,7 @@ async function signIn(apiClient: ApiClient, statusBar: StatusBar): Promise<boole
     if (session) {
       apiClient.setToken(session.accessToken);
       statusBar.syncWithServer();
+      sidebarProvider?.setSignedIn(session.account.label);
       vscode.window.showInformationMessage(
         `GitAgora: Signed in as ${session.account.label}`
       );
@@ -49,6 +52,7 @@ async function trySilentSignIn(apiClient: ApiClient, statusBar: StatusBar): Prom
     if (session) {
       apiClient.setToken(session.accessToken);
       statusBar.syncWithServer();
+      sidebarProvider?.setSignedIn(session.account.label);
       return true;
     }
   } catch {
@@ -67,10 +71,17 @@ export async function activate(context: vscode.ExtensionContext) {
   heartbeatSender = new HeartbeatSender(apiClient, storage);
   statusBar = new StatusBar(apiClient, sessionManager);
 
-  // When a session ends, enqueue it for sending and update status bar
+  // Register sidebar webview provider
+  sidebarProvider = new SidebarProvider(context.extensionUri, apiClient, sessionManager);
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(SidebarProvider.viewId, sidebarProvider)
+  );
+
+  // When a session ends, enqueue it for sending and update status bar + sidebar
   sessionManager.setOnSessionEnd(session => {
     heartbeatSender!.enqueue(session);
     statusBar!.addCompletedSessionTime(session.duration_seconds);
+    sidebarProvider?.refreshStats();
   });
 
   // Start tracker
@@ -128,6 +139,7 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand('gitagora.signOut', async () => {
       apiClient.setToken('');
+      sidebarProvider?.setSignedOut();
       vscode.window.showInformationMessage('GitAgora: Signed out.');
     })
   );

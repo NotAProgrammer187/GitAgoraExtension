@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+  <!-- Code bracket left -->
+  <path d="M8 4L2 12L8 20" stroke="#C5C5C5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Code bracket right -->
+  <path d="M16 4L22 12L16 20" stroke="#C5C5C5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Clock circle -->
+  <circle cx="12" cy="12" r="4.5" stroke="#C5C5C5" stroke-width="1.5"/>
+  <!-- Clock hands -->
+  <path d="M12 10V12L13.5 13.5" stroke="#C5C5C5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -2,7 +2,7 @@
   "name": "gitagora",
   "displayName": "GitAgora",
   "description": "Track your coding hours and compete on the leaderboard",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "publisher": "gitagora",
   "license": "MIT",
   "icon": "images/Logo.png",
@@ -21,6 +21,24 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "gitagora-sidebar",
+          "title": "GitAgora",
+          "icon": "images/sidebar-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "gitagora-sidebar": [
+        {
+          "type": "webview",
+          "id": "gitagora-sidebar-view",
+          "name": "GitAgora"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "gitagora.signIn",

@@ -6,6 +6,7 @@ A lightweight VS Code extension that automatically tracks how long you code — 
 
 ## Features
 
+- **Sidebar Panel** — GitAgora lives in the activity bar. See today's stats, top language, and session count at a glance — no commands needed.
 - **Auto Time Tracking** — Starts when you type, pauses when you're idle. Zero effort.
 - **Per-Language Stats** — TypeScript, Python, Rust, Go — every language tracked separately.
 - **Status Bar** — See today's total coding time right in the bottom bar.
@@ -16,10 +17,11 @@ A lightweight VS Code extension that automatically tracks how long you code — 
 ## Getting Started
 
 1. Install the extension
-2. Open the Command Palette (`Ctrl+Shift+P`) and run **GitAgora: Sign In with GitHub**
-3. Start coding — your time is tracked automatically
+2. Click the **GitAgora icon** in the activity bar (left sidebar)
+3. Click **Sign in with GitHub**
+4. Start coding — your time is tracked automatically
 
-Your stats will appear on your [GitAgora Dashboard](https://www.gitagora.xyz/dashboard).
+Your stats will appear in the sidebar panel and on your [GitAgora Dashboard](https://www.gitagora.xyz/dashboard).
 
 ## Commands
 
