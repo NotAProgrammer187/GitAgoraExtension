@@ -77,59 +77,7 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.window.registerWebviewViewProvider(SidebarProvider.viewId, sidebarProvider)
   );
 
-  // When a session ends, enqueue it for sending and update status bar + sidebar
-  sessionManager.setOnSessionEnd(session => {
-    heartbeatSender!.enqueue(session);
-    statusBar!.addCompletedSessionTime(session.duration_seconds);
-    sidebarProvider?.refreshStats();
-  });
-
-  // Start tracker
-  tracker = new Tracker(sessionManager, config.trackProjectNames);
-  tracker.start();
-
-  // Start heartbeat sender (loads persisted queue + starts flush interval)
-  await heartbeatSender.start();
-
-  // Start pulse sender (30-second live presence pings)
-  pulseSender = new PulseSender(apiClient, sessionManager);
-  pulseSender.start();
-
-  // Start status bar updates
-  statusBar.start();
-
-  // Try to silently restore an existing GitHub session (no prompt)
-  const silentOk = await trySilentSignIn(apiClient, statusBar);
-
-  // If not signed in, show a popup prompting the user
-  if (!silentOk) {
-    const action = await vscode.window.showInformationMessage(
-      'GitAgora: Sign in with GitHub to track your coding hours.',
-      'Sign In'
-    );
-    if (action === 'Sign In') {
-      await signIn(apiClient, statusBar);
-    }
-  }
-
-  // Listen for config changes
-  context.subscriptions.push(
-    onConfigChange(() => {
-      const updated = getConfig();
-      apiClient.updateConfig(updated.apiUrl);
-    })
-  );
-
-  // Listen for auth session changes (sign in/out from other extensions)
-  context.subscriptions.push(
-    vscode.authentication.onDidChangeSessions(e => {
-      if (e.provider.id === 'github') {
-        trySilentSignIn(apiClient, statusBar!);
-      }
-    })
-  );
-
-  // Register commands
+  // Register commands early so they're available as soon as the sidebar renders
   context.subscriptions.push(
     vscode.commands.registerCommand('gitagora.signIn', () =>
       signIn(apiClient, statusBar!)
@@ -182,6 +130,65 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand('gitagora.openDashboard', () => {
       const dashboardUrl = getConfig().apiUrl;
       vscode.env.openExternal(vscode.Uri.parse(dashboardUrl));
+    })
+  );
+
+  // When a session ends, enqueue it for sending and update status bar + sidebar
+  sessionManager.setOnSessionEnd(session => {
+    heartbeatSender!.enqueue(session);
+    statusBar!.addCompletedSessionTime(session.duration_seconds);
+    sidebarProvider?.refreshStats();
+  });
+
+  // Start tracker
+  tracker = new Tracker(sessionManager, config.trackProjectNames);
+  tracker.start();
+
+  // Start heartbeat sender (loads persisted queue + starts flush interval) — non-blocking
+  heartbeatSender.start().catch(err =>
+    console.error('[GitAgora] HeartbeatSender start error:', err)
+  );
+
+  // Start pulse sender (30-second live presence pings)
+  pulseSender = new PulseSender(apiClient, sessionManager);
+  pulseSender.start();
+
+  // Start status bar updates
+  statusBar.start();
+
+  // Auth flow — fire-and-forget so activate() returns immediately
+  // (allows resolveWebviewView to be called without blocking)
+  void (async () => {
+    try {
+      const silentOk = await trySilentSignIn(apiClient, statusBar!);
+      if (!silentOk) {
+        const action = await vscode.window.showInformationMessage(
+          'GitAgora: Sign in with GitHub to track your coding hours.',
+          'Sign In'
+        );
+        if (action === 'Sign In') {
+          await signIn(apiClient, statusBar!);
+        }
+      }
+    } catch (err) {
+      console.error('[GitAgora] Auth flow error:', err);
+    }
+  })();
+
+  // Listen for config changes
+  context.subscriptions.push(
+    onConfigChange(() => {
+      const updated = getConfig();
+      apiClient.updateConfig(updated.apiUrl);
+    })
+  );
+
+  // Listen for auth session changes (sign in/out from other extensions)
+  context.subscriptions.push(
+    vscode.authentication.onDidChangeSessions(e => {
+      if (e.provider.id === 'github') {
+        trySilentSignIn(apiClient, statusBar!);
+      }
     })
   );
 }

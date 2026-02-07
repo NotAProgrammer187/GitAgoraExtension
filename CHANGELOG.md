@@ -2,6 +2,18 @@
 
 All notable changes to the GitAgora extension will be documented in this file.
 
+## [0.2.3] - 2026-02-07
+
+### Fixed
+
+- Fixed blank sidebar when not logged into GitHub — sidebar now renders sign-in screen immediately
+- Made auth flow non-blocking so `activate()` returns before user interacts with sign-in prompt
+- Moved command registrations before async work so `gitagora.signIn` is available when sidebar renders
+- Made heartbeat sender start non-blocking to prevent activation delays
+- Added defensive error handling in sidebar renderer with branded fallback page
+
+---
+
 ## [0.2.2] - 2026-02-07
 
 ### Improved

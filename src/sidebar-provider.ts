@@ -88,10 +88,96 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       return;
     }
 
-    const isSignedIn = this.apiClient.isAuthenticated() && this.username;
-    this.view.webview.html = isSignedIn
-      ? this.getSignedInHtml(stats)
-      : this.getSignedOutHtml();
+    try {
+      const isSignedIn = this.apiClient.isAuthenticated() && this.username;
+      this.view.webview.html = isSignedIn
+        ? this.getSignedInHtml(stats)
+        : this.getSignedOutHtml();
+    } catch (err) {
+      console.error('[GitAgora] Sidebar render error:', err);
+      this.view.webview.html = this.getErrorHtml();
+    }
+  }
+
+  private getErrorHtml(): string {
+    return /* html */ `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: var(--vscode-font-family);
+      color: var(--vscode-foreground);
+      background: var(--vscode-sideBar-background);
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .logo {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+    .logo .accent {
+      color: #39ff14;
+    }
+    .divider {
+      width: 40px;
+      height: 2px;
+      background: #39ff14;
+      opacity: 0.4;
+      border-radius: 1px;
+      margin-bottom: 16px;
+    }
+    .message {
+      color: var(--vscode-descriptionForeground);
+      font-size: 12px;
+      text-align: center;
+      line-height: 1.6;
+      margin-bottom: 28px;
+      max-width: 200px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: var(--vscode-font-family);
+      cursor: pointer;
+      font-weight: 600;
+      width: 100%;
+      justify-content: center;
+      transition: background 0.15s ease;
+    }
+    .btn-primary {
+      background: #39ff14;
+      color: #0a0a0a;
+    }
+    .btn-primary:hover {
+      background: #32e612;
+    }
+  </style>
+</head>
+<body>
+  <div class="logo">Git<span class="accent">Agora</span></div>
+  <div class="divider"></div>
+  <p class="message">Something went wrong.<br>Try signing in again.</p>
+  <button class="btn btn-primary" onclick="signIn()">Sign in with GitHub</button>
+  <script>
+    const vscode = acquireVsCodeApi();
+    function signIn() {
+      vscode.postMessage({ command: 'signIn' });
+    }
+  </script>
+</body>
+</html>`;
   }
 
   private getSignedOutHtml(): string {
