@@ -8,6 +8,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
   private view?: vscode.WebviewView;
   private username: string = '';
+  private lastStats?: TodayStats;
+  private loading = false;
 
   constructor(
     private readonly extensionUri: vscode.Uri,
@@ -37,6 +39,9 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         case 'openLeaderboard':
           await vscode.commands.executeCommand('gitagora.openDashboard');
           break;
+        case 'refresh':
+          await this.refreshStats();
+          break;
       }
     });
 
@@ -62,19 +67,13 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       return;
     }
 
-    const stats = await this.apiClient.getTodayStats();
-    this.render(stats ?? undefined);
-  }
+    this.loading = true;
+    this.render(this.lastStats);
 
-  /** Push updated local time to the sidebar (called on session end, timer tick) */
-  updateLocalTime(): void {
-    if (!this.apiClient.isAuthenticated()) {
-      return;
-    }
-    // Quick re-render with no server fetch — just refresh the view
-    // We'll do a lightweight render using cached data concept
-    // For simplicity, trigger a full stats refresh
-    this.refreshStats();
+    const stats = await this.apiClient.getTodayStats();
+    this.lastStats = stats ?? undefined;
+    this.loading = false;
+    this.render(this.lastStats);
   }
 
   private render(stats?: TodayStats): void {
@@ -100,41 +99,50 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       font-family: var(--vscode-font-family);
       color: var(--vscode-foreground);
       background: var(--vscode-sideBar-background);
-      padding: 20px 16px;
+      padding: 24px 16px;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
     .logo {
-      font-size: 22px;
+      font-size: 24px;
       font-weight: 700;
       letter-spacing: -0.5px;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
     }
     .logo .accent {
       color: #39ff14;
+    }
+    .divider {
+      width: 40px;
+      height: 2px;
+      background: #39ff14;
+      opacity: 0.4;
+      border-radius: 1px;
+      margin-bottom: 16px;
     }
     .tagline {
       color: var(--vscode-descriptionForeground);
       font-size: 12px;
       text-align: center;
-      line-height: 1.5;
-      margin-bottom: 24px;
+      line-height: 1.6;
+      margin-bottom: 28px;
       max-width: 200px;
     }
     .btn {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 8px 16px;
+      padding: 9px 16px;
       border: none;
-      border-radius: 4px;
+      border-radius: 6px;
       font-size: 13px;
       font-family: var(--vscode-font-family);
       cursor: pointer;
       font-weight: 600;
       width: 100%;
       justify-content: center;
+      transition: background 0.15s ease;
     }
     .btn-primary {
       background: #39ff14;
@@ -147,10 +155,17 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       width: 16px;
       height: 16px;
     }
+    .footer {
+      margin-top: 20px;
+      font-size: 11px;
+      color: var(--vscode-descriptionForeground);
+      opacity: 0.6;
+    }
   </style>
 </head>
 <body>
   <div class="logo">Git<span class="accent">Agora</span></div>
+  <div class="divider"></div>
   <p class="tagline">Track your coding hours.<br>Compete on the leaderboard.</p>
   <button class="btn btn-primary" onclick="signIn()">
     <svg class="gh-icon" viewBox="0 0 16 16" fill="currentColor">
@@ -167,6 +182,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     </svg>
     Sign in with GitHub
   </button>
+  <div class="footer">gitagora.xyz</div>
   <script>
     const vscode = acquireVsCodeApi();
     function signIn() {
@@ -187,6 +203,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       topLang = sorted[0][0];
     }
 
+    const spinnerClass = this.loading ? 'spinning' : '';
+
     return /* html */ `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -198,40 +216,85 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       font-family: var(--vscode-font-family);
       color: var(--vscode-foreground);
       background: var(--vscode-sideBar-background);
-      padding: 20px 16px;
+      padding: 24px 16px;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
     .logo {
-      font-size: 22px;
+      font-size: 24px;
       font-weight: 700;
       letter-spacing: -0.5px;
-      margin-bottom: 4px;
     }
     .logo .accent {
       color: #39ff14;
     }
+    .refresh-btn {
+      background: none;
+      border: none;
+      color: var(--vscode-descriptionForeground);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      transition: color 0.15s ease;
+    }
+    .refresh-btn:hover {
+      color: #39ff14;
+    }
+    .refresh-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .spinning svg {
+      animation: spin 0.8s linear infinite;
+    }
     .username {
       color: var(--vscode-descriptionForeground);
       font-size: 12px;
-      margin-bottom: 20px;
+      margin-bottom: 6px;
+    }
+    .divider {
+      width: 40px;
+      height: 2px;
+      background: #39ff14;
+      opacity: 0.4;
+      border-radius: 1px;
+      margin-bottom: 18px;
     }
     .stats {
       width: 100%;
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      margin-bottom: 24px;
+      gap: 8px;
+      margin-bottom: 20px;
     }
     .stat-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 8px 12px;
+      padding: 10px 12px;
       background: var(--vscode-editor-background);
       border-radius: 6px;
       border: 1px solid var(--vscode-widget-border, transparent);
+      transition: border-color 0.15s ease;
+    }
+    .stat-row:hover {
+      border-color: rgba(57, 255, 20, 0.2);
+    }
+    .stat-row.highlight {
+      border-color: rgba(57, 255, 20, 0.15);
     }
     .stat-label {
       font-size: 12px;
@@ -242,19 +305,30 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       font-weight: 600;
       color: #39ff14;
     }
+    .stat-value.large {
+      font-size: 16px;
+      text-shadow: 0 0 10px rgba(57, 255, 20, 0.3);
+    }
+    .btn-group {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
     .btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 7px 16px;
+      gap: 6px;
+      padding: 8px 16px;
       border: none;
-      border-radius: 4px;
+      border-radius: 6px;
       font-size: 12px;
       font-family: var(--vscode-font-family);
       cursor: pointer;
       font-weight: 600;
       width: 100%;
-      margin-bottom: 8px;
+      transition: background 0.15s ease;
     }
     .btn-primary {
       background: #39ff14;
@@ -270,16 +344,30 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     .btn-secondary:hover {
       background: var(--vscode-button-secondaryHoverBackground);
     }
+    .footer {
+      margin-top: 16px;
+      font-size: 11px;
+      color: var(--vscode-descriptionForeground);
+      opacity: 0.6;
+    }
   </style>
 </head>
 <body>
-  <div class="logo">Git<span class="accent">Agora</span></div>
+  <div class="header">
+    <div class="logo">Git<span class="accent">Agora</span></div>
+    <button class="refresh-btn ${spinnerClass}" onclick="refresh()" title="Refresh stats">
+      <svg viewBox="0 0 16 16" fill="currentColor">
+        <path d="M13.45 2.55a7 7 0 1 0 .7 9.9l-1.2-1a5.5 5.5 0 1 1-.55-7.78L10.5 5.5H15V1l-1.55 1.55z"/>
+      </svg>
+    </button>
+  </div>
   <div class="username">Signed in as ${this.escapeHtml(this.username)}</div>
+  <div class="divider"></div>
 
   <div class="stats">
-    <div class="stat-row">
+    <div class="stat-row highlight">
       <span class="stat-label">Today</span>
-      <span class="stat-value">${totalTime}</span>
+      <span class="stat-value large">${totalTime}</span>
     </div>
     <div class="stat-row">
       <span class="stat-label">Sessions</span>
@@ -291,8 +379,11 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     </div>
   </div>
 
-  <button class="btn btn-primary" onclick="openDashboard()">Open Dashboard</button>
-  <button class="btn btn-secondary" onclick="openLeaderboard()">Leaderboard</button>
+  <div class="btn-group">
+    <button class="btn btn-primary" onclick="openDashboard()">Open Dashboard</button>
+    <button class="btn btn-secondary" onclick="openLeaderboard()">Leaderboard</button>
+  </div>
+  <div class="footer">gitagora.xyz</div>
 
   <script>
     const vscode = acquireVsCodeApi();
@@ -301,6 +392,9 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     }
     function openLeaderboard() {
       vscode.postMessage({ command: 'openLeaderboard' });
+    }
+    function refresh() {
+      vscode.postMessage({ command: 'refresh' });
     }
   </script>
 </body>

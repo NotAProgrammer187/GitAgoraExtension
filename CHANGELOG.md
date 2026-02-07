@@ -2,6 +2,19 @@
 
 All notable changes to the GitAgora extension will be documented in this file.
 
+## [0.2.1] - 2026-02-07
+
+### Improved
+
+- Sidebar UI polish: better spacing, rounded corners, smoother hover transitions
+- Added refresh button with spinning animation while fetching stats
+- Today's coding time now has a neon glow effect for emphasis
+- Added neon green divider between header and content
+- Added "gitagora.xyz" footer to both signed-in and signed-out views
+- Stats are cached locally so the panel doesn't flash empty on refresh
+
+---
+
 ## [0.2.0] - 2026-02-07
 
 ### Added

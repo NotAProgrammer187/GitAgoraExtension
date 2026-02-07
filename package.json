@@ -2,7 +2,7 @@
   "name": "gitagora",
   "displayName": "GitAgora",
   "description": "Track your coding hours and compete on the leaderboard",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "gitagora",
   "license": "MIT",
   "icon": "images/Logo.png",
