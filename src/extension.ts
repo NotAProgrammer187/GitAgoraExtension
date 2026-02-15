@@ -9,6 +9,7 @@ import { PulseSender } from './pulse';
 import { StatusBar } from './status-bar';
 import { SidebarProvider } from './sidebar-provider';
 import { formatTime } from './utils';
+import { initLogger, logInfo, logError } from './logger';
 
 const GITHUB_AUTH_SCOPES = ['user:email'];
 
@@ -18,45 +19,52 @@ let pulseSender: PulseSender | undefined;
 let statusBar: StatusBar | undefined;
 let sidebarProvider: SidebarProvider | undefined;
 
-async function signIn(apiClient: ApiClient, statusBar: StatusBar): Promise<boolean> {
+async function getGitHubToken(createIfNone: boolean): Promise<string | null> {
   try {
     const session = await vscode.authentication.getSession(
       'github',
       GITHUB_AUTH_SCOPES,
-      { createIfNone: true }
+      { createIfNone }
     );
-
-    if (session) {
-      apiClient.setToken(session.accessToken);
-      statusBar.syncWithServer();
-      sidebarProvider?.setSignedIn(session.account.label);
-      vscode.window.showInformationMessage(
-        `GitAgora: Signed in as ${session.account.label}`
-      );
-      return true;
-    }
+    return session?.accessToken ?? null;
   } catch {
-    // User cancelled the sign-in prompt
+    return null;
+  }
+}
+
+async function getGitHubSession(createIfNone: boolean) {
+  try {
+    return await vscode.authentication.getSession(
+      'github',
+      GITHUB_AUTH_SCOPES,
+      { createIfNone }
+    );
+  } catch {
+    return null;
+  }
+}
+
+async function signIn(apiClient: ApiClient, statusBar: StatusBar): Promise<boolean> {
+  const session = await getGitHubSession(true);
+
+  if (session) {
+    statusBar.syncWithServer();
+    sidebarProvider?.setSignedIn(session.account.label);
+    vscode.window.showInformationMessage(
+      `GitAgora: Signed in as ${session.account.label}`
+    );
+    return true;
   }
   return false;
 }
 
 async function trySilentSignIn(apiClient: ApiClient, statusBar: StatusBar): Promise<boolean> {
-  try {
-    const session = await vscode.authentication.getSession(
-      'github',
-      GITHUB_AUTH_SCOPES,
-      { createIfNone: false }
-    );
+  const session = await getGitHubSession(false);
 
-    if (session) {
-      apiClient.setToken(session.accessToken);
-      statusBar.syncWithServer();
-      sidebarProvider?.setSignedIn(session.account.label);
-      return true;
-    }
-  } catch {
-    // No existing session, that's fine
+  if (session) {
+    statusBar.syncWithServer();
+    sidebarProvider?.setSignedIn(session.account.label);
+    return true;
   }
   return false;
 }
@@ -64,10 +72,18 @@ async function trySilentSignIn(apiClient: ApiClient, statusBar: StatusBar): Prom
 export async function activate(context: vscode.ExtensionContext) {
   const config = getConfig();
 
+  // Initialize logger
+  context.subscriptions.push(initLogger());
+  logInfo('Activating GitAgora extension');
+
   // Initialize components
   const storage = new Storage(context.globalState);
   const sessionManager = new SessionManager();
   const apiClient = new ApiClient(config.apiUrl);
+
+  // Set up token provider — fetches token from VS Code on each request
+  apiClient.setTokenProvider(() => getGitHubToken(false));
+
   heartbeatSender = new HeartbeatSender(apiClient, storage);
   statusBar = new StatusBar(apiClient, sessionManager);
 
@@ -86,7 +102,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand('gitagora.signOut', async () => {
-      apiClient.setToken('');
       sidebarProvider?.setSignedOut();
       vscode.window.showInformationMessage('GitAgora: Signed out.');
     })
@@ -94,7 +109,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand('gitagora.showTodayStats', async () => {
-      if (!apiClient.isAuthenticated()) {
+      if (!(await apiClient.isAuthenticated())) {
         const action = await vscode.window.showInformationMessage(
           'GitAgora: Sign in with GitHub to see your stats.',
           'Sign In'
@@ -146,7 +161,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Start heartbeat sender (loads persisted queue + starts flush interval) — non-blocking
   heartbeatSender.start().catch(err =>
-    console.error('[GitAgora] HeartbeatSender start error:', err)
+    logError('HeartbeatSender start error', err)
   );
 
   // Start pulse sender (30-second live presence pings)
@@ -171,7 +186,7 @@ export async function activate(context: vscode.ExtensionContext) {
         }
       }
     } catch (err) {
-      console.error('[GitAgora] Auth flow error:', err);
+      logError('Auth flow error', err);
     }
   })();
 

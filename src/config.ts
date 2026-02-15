@@ -1,15 +1,12 @@
 import * as vscode from 'vscode';
+import { GitAgoraConfig } from './types';
 
-export interface GitAgoraConfig {
-  apiUrl: string;
-  idleTimeout: number;
-  trackProjectNames: boolean;
-}
+export type { GitAgoraConfig };
 
 export function getConfig(): GitAgoraConfig {
   const cfg = vscode.workspace.getConfiguration('gitagora');
   return {
-    apiUrl: cfg.get<string>('apiUrl', 'https://www.gitagora.xyz/').replace(/\/+$/, ''), //using localhost first (development) will branch to our production url later :))
+    apiUrl: cfg.get<string>('apiUrl', 'https://www.gitagora.xyz/').replace(/\/+$/, ''),
     idleTimeout: cfg.get<number>('idleTimeout', 300),
     trackProjectNames: cfg.get<boolean>('trackProjectNames', true),
   };

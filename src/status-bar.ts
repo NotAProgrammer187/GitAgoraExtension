@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
-import { ApiClient, TodayStats } from './api-client';
+import { ApiClient } from './api-client';
 import { SessionManager } from './session-manager';
 import { formatTime } from './utils';
+import { STATUS_BAR_UPDATE_INTERVAL_MS } from './constants';
 
-const UPDATE_INTERVAL = 60_000; // 60 seconds
-
-export class StatusBar {
+/** Shows today's total coding time in the VS Code status bar. */
+export class StatusBar implements vscode.Disposable {
   private item: vscode.StatusBarItem;
   private updateInterval: ReturnType<typeof setInterval> | null = null;
   private serverSeconds = 0;
@@ -23,6 +23,7 @@ export class StatusBar {
     this.item.show();
   }
 
+  /** Fetch the latest stats from the server and update the display. */
   async syncWithServer(): Promise<void> {
     const stats = await this.apiClient.getTodayStats();
     if (stats) {
@@ -33,7 +34,7 @@ export class StatusBar {
 
   start(): void {
     this.render();
-    this.updateInterval = setInterval(() => this.render(), UPDATE_INTERVAL);
+    this.updateInterval = setInterval(() => this.render(), STATUS_BAR_UPDATE_INTERVAL_MS);
   }
 
   private render(): void {
@@ -42,6 +43,7 @@ export class StatusBar {
     this.item.text = `$(clock) ${formatTime(totalSeconds)}`;
   }
 
+  /** Add locally completed session time to the running total. */
   addCompletedSessionTime(seconds: number): void {
     this.serverSeconds += seconds;
     this.render();

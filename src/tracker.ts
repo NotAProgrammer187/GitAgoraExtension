@@ -2,8 +2,10 @@ import * as vscode from 'vscode';
 import { SessionManager } from './session-manager';
 import { normalizeLanguage, getProjectName } from './utils';
 import { getConfig } from './config';
+import { IDLE_CHECK_INTERVAL_MS } from './constants';
 
-export class Tracker {
+/** Listens to VS Code editor events and manages session lifecycle via SessionManager. */
+export class Tracker implements vscode.Disposable {
   private lastActivity = Date.now();
   private idleCheckInterval: ReturnType<typeof setInterval> | null = null;
   private isIdle = false;
@@ -28,8 +30,8 @@ export class Tracker {
       })
     );
 
-    // Start idle detection timer (check every 30 seconds)
-    this.idleCheckInterval = setInterval(() => this.checkIdle(), 30_000);
+    // Start idle detection timer
+    this.idleCheckInterval = setInterval(() => this.checkIdle(), IDLE_CHECK_INTERVAL_MS);
 
     // Kick off with current editor if one is open
     this.onActivity();

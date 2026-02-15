@@ -2,6 +2,41 @@
 
 All notable changes to the GitAgora extension will be documented in this file.
 
+## [0.3.0] - 2026-02-15
+
+### Security
+
+- Added Content Security Policy (CSP) with per-render nonces to all webview HTML templates
+- Set `localResourceRoots: []` on webview to block local file access
+- Scoped `gitagora.apiUrl` setting to `application` level — workspace settings can no longer redirect API calls (prevents token exfiltration from malicious repos)
+- Removed in-memory GitHub token caching — token is now fetched from VS Code's auth API on each request
+- Added runtime validation for API response bodies (`isValidTodayStats` type guard)
+- Fixed `require('vscode')` in `utils.ts` — replaced with proper static import
+
+### Fixed
+
+- Added flush race condition guard in `HeartbeatSender` to prevent concurrent flushes from sending overlapping sessions
+
+### Improved
+
+- Extracted shared CSS into `getBaseHtml()` helper — deduplicated ~120 lines of repeated styles across 3 webview templates
+- Created `src/constants.ts` — all magic numbers (intervals, timeouts, thresholds) are now named constants
+- Created `src/types.ts` — centralized all shared interfaces (`Session`, `TodayStats`, `PulseData`, etc.)
+- `Tracker` and `StatusBar` now formally implement `vscode.Disposable`
+- Added JSDoc to all exported classes, interfaces, and public methods
+- Added `OutputChannel` logging — errors and info written to "GitAgora" output panel for debugging
+
+### Developer Experience
+
+- Added ESLint + `@typescript-eslint` + Prettier with strict configs
+- Added `npm run typecheck`, `lint`, `lint:fix`, `format`, and `format:check` scripts
+- Added `@types/node` dev dependency (was missing — typecheck now passes)
+- Added `.vscode/launch.json` and `tasks.json` for F5 extension debugging
+- Added `.github/workflows/ci.yml` — runs typecheck, lint, and build on PRs
+- Added `CONTRIBUTING.md` with architecture diagram, setup steps, and code conventions
+
+---
+
 ## [0.2.4] - 2026-02-08
 
 ### Fixed

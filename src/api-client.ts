@@ -1,42 +1,39 @@
-import { Session } from './session-manager';
+import { Session } from './types';
+import { PulseData, TodayStats, TokenProvider } from './types';
+import { REQUEST_TIMEOUT_MS, PULSE_TIMEOUT_MS } from './constants';
 
-const REQUEST_TIMEOUT = 30_000;
-const PULSE_TIMEOUT = 5_000;
+export type { PulseData, TodayStats, TokenProvider };
 
-export interface PulseData {
-  status: 'active';
-  language: string;
-  project_name: string | null;
-  current_seconds: number;
-  started_at: string;
-  window_id: string;
-}
-
-export interface TodayStats {
-  total_seconds: number;
-  languages: Record<string, number>;
-  sessions_count: number;
-}
-
+/** HTTP client for communicating with the GitAgora API server. */
 export class ApiClient {
-  private token: string = '';
+  private tokenProvider: TokenProvider = async () => null;
 
   constructor(private apiUrl: string) {}
 
+  /** Update the base API URL (called when settings change). */
   updateConfig(apiUrl: string): void {
     this.apiUrl = apiUrl;
   }
 
-  setToken(token: string): void {
-    this.token = token;
+  /** Set the function used to retrieve the auth token on each request. */
+  setTokenProvider(provider: TokenProvider): void {
+    this.tokenProvider = provider;
   }
 
-  isAuthenticated(): boolean {
-    return this.token.length > 0;
+  /** Check whether the user currently has a valid auth token. */
+  async isAuthenticated(): Promise<boolean> {
+    const token = await this.tokenProvider();
+    return token !== null && token.length > 0;
   }
 
+  private async getToken(): Promise<string | null> {
+    return this.tokenProvider();
+  }
+
+  /** Send completed sessions to the server. Returns true on success. */
   async sendHeartbeats(sessions: Session[]): Promise<boolean> {
-    if (!this.token || sessions.length === 0) {
+    const token = await this.getToken();
+    if (!token || sessions.length === 0) {
       return false;
     }
 
@@ -44,11 +41,11 @@ export class ApiClient {
       const response = await fetch(`${this.apiUrl}/api/heartbeat`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.token}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ sessions }),
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT),
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });
 
       if (!response.ok) {
@@ -63,8 +60,10 @@ export class ApiClient {
     }
   }
 
+  /** Send a live presence pulse to the server (fire-and-forget). */
   async sendPulse(data: PulseData | { status: 'stopped'; window_id: string } | null): Promise<void> {
-    if (!this.token) {
+    const token = await this.getToken();
+    if (!token) {
       return;
     }
 
@@ -74,29 +73,31 @@ export class ApiClient {
       await fetch(`${this.apiUrl}/api/pulse`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.token}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(PULSE_TIMEOUT),
+        signal: AbortSignal.timeout(PULSE_TIMEOUT_MS),
       });
     } catch {
       // Fire-and-forget: silently ignore errors
     }
   }
 
+  /** Fetch today's coding stats from the server. Returns null on failure. */
   async getTodayStats(): Promise<TodayStats | null> {
-    if (!this.token) {
+    const token = await this.getToken();
+    if (!token) {
       return null;
     }
 
     try {
-      const tzOffset = new Date().getTimezoneOffset()
+      const tzOffset = new Date().getTimezoneOffset();
       const response = await fetch(`${this.apiUrl}/api/heartbeat?today=true&tz_offset=${tzOffset}`, {
         headers: {
-          'Authorization': `Bearer ${this.token}`,
+          'Authorization': `Bearer ${token}`,
         },
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT),
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });
 
       if (!response.ok) {
@@ -104,10 +105,29 @@ export class ApiClient {
         return null;
       }
 
-      return (await response.json()) as TodayStats;
+      const data: unknown = await response.json();
+      if (!isValidTodayStats(data)) {
+        console.error('[GitAgora] Stats response failed validation');
+        return null;
+      }
+
+      return data;
     } catch (err) {
       console.error('[GitAgora] Stats GET error:', err);
       return null;
     }
   }
+}
+
+function isValidTodayStats(data: unknown): data is TodayStats {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  const obj = data as Record<string, unknown>;
+  return (
+    typeof obj.total_seconds === 'number' &&
+    typeof obj.sessions_count === 'number' &&
+    typeof obj.languages === 'object' &&
+    obj.languages !== null
+  );
 }

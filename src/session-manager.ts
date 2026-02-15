@@ -1,20 +1,9 @@
-export interface Session {
-  started_at: string;
-  ended_at: string;
-  duration_seconds: number;
-  language: string;
-  project_name: string | null;
-}
+import { Session, ActiveSessionInfo } from './types';
+import { MIN_SESSION_DURATION_SECS } from './constants';
 
-export interface ActiveSessionInfo {
-  language: string;
-  projectName: string | null;
-  currentSeconds: number;
-  startedAt: string;
-}
+export type { Session, ActiveSessionInfo };
 
-const MIN_SESSION_DURATION = 30; // seconds
-
+/** Manages the current coding session — starts, ends, and tracks active sessions. */
 export class SessionManager {
   private currentSession: {
     startedAt: Date;
@@ -45,7 +34,7 @@ export class SessionManager {
       (endTime.getTime() - this.currentSession.startedAt.getTime()) / 1000
     );
 
-    if (durationSeconds < MIN_SESSION_DURATION) {
+    if (durationSeconds < MIN_SESSION_DURATION_SECS) {
       this.currentSession = null;
       return null;
     }

@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { Session } from './session-manager';
+import { Session } from './types';
 
 const STORAGE_KEY = 'gitagora.pendingHeartbeats';
 

@@ -1,9 +1,10 @@
 import * as crypto from 'crypto';
-import { ApiClient, PulseData } from './api-client';
+import { PulseData } from './types';
+import { ApiClient } from './api-client';
 import { SessionManager } from './session-manager';
+import { PULSE_INTERVAL_MS } from './constants';
 
-const PULSE_INTERVAL = 30_000; // 30 seconds
-
+/** Sends periodic live presence pings to the server. */
 export class PulseSender {
   private intervalId: ReturnType<typeof setInterval> | undefined;
   private readonly windowId: string;
@@ -16,7 +17,7 @@ export class PulseSender {
   }
 
   start(): void {
-    this.intervalId = setInterval(() => this.tick(), PULSE_INTERVAL);
+    this.intervalId = setInterval(() => this.tick(), PULSE_INTERVAL_MS);
   }
 
   private tick(): void {
@@ -36,6 +37,7 @@ export class PulseSender {
     }
   }
 
+  /** Send a final "stopped" pulse (called on deactivation). */
   sendStop(): void {
     this.apiClient.sendPulse({ status: 'stopped', window_id: this.windowId });
   }
